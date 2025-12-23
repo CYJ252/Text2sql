@@ -1,0 +1,264 @@
+用户问题,查询条件,SQL语句,备注
+所有电厂合计产生的SAP纠正性维修总数是多少？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+履历类型：SAP纠正性维修（也叫NG单、纠正性维修单：noticeType=NG && workTypeCode=N-EQPR）
+指标关键词：合计、总数","SELECT COUNT(*)  
+FROM ads_sap_repair_data
+WHERE notice_type = 'NG'
+  AND work_type_code = 'N-EQPR';","三类维修通知单：
+1、NG单：SAP纠正性维修（noticeType=NG && workTypeCode=N-EQPR）
+2、NP单：SAP预防性维修（noticeType=NP）
+3、NS单：SAP定期试验（noticeType=NS）
+
+通过'是否发现故障'字段if_disc_fault=1判定是故障单"
+所有电厂合计产生的SAP预防性维修总数是多少？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+履历类型：SAP预防性维修（也叫NP单、预防性维修单：noticeType=NP）
+指标关键词：合计、总数","SELECT COUNT(*)  
+FROM ads_sap_repair_data
+WHERE notice_type = 'NP';","三类维修通知单：
+1、NG单：SAP纠正性维修（noticeType=NG && workTypeCode=N-EQPR）
+2、NP单：SAP预防性维修（noticeType=NP）
+3、NS单：SAP定期试验（noticeType=NS）
+
+通过'是否发现故障'字段if_disc_fault=2判定是故障单"
+所有电厂合计产生的SAP定期试验总数是多少？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+履历类型：SAP定期试验（也叫NS单、定期试验单：noticeType=NS）
+指标关键词：合计、总数","SELECT COUNT(*)  
+FROM ads_sap_repair_data
+WHERE notice_type = 'NS';","三类维修通知单：
+1、NG单：SAP纠正性维修（noticeType=NG && workTypeCode=N-EQPR）
+2、NP单：SAP预防性维修（noticeType=NP）
+3、NS单：SAP定期试验（noticeType=NS）
+
+通过'是否发现故障'字段if_disc_fault=3判定是故障单"
+所有电厂合计产生的SAP改造通知单总数是多少？,"业务对象：改造通知单
+目标表：ads_sap_reform_data
+履历类型：SAP改造通知单
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_sap_reform_data_ai;,
+所有电厂合计产生的物项替代总数是多少？,"业务对象：物项替代
+目标表：ads_item_substitution_data
+履历类型：物项替代
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_item_substitution_data;,
+所有电厂合计产生的QDR总数是多少？,"业务对象：QDR
+目标表：ads_qdr_data
+履历类型：QDR
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_qdr_data;,
+所有电厂合计产生的DER总数是多少？,"业务对象：DER
+目标表：ads_der_data
+履历类型：DER
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_der_data;,
+所有电厂合计产生的I0总数是多少？,"业务对象：I0
+目标表：ads_i0_data
+履历类型：I0
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_i0_data;,
+所有电厂合计产生的一张清单一张网总数是多少？,"业务对象：技术问题
+目标表：ads_sap_tech_imo
+履历类型：一张清单一张网
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_sap_tech_imo;,
+所有电厂合计产生的群厂共性问题总数是多少？,"业务对象：技术问题
+目标表：ads_femp_general_data
+履历类型：群厂共性问题
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_femp_general_data;,
+所有电厂合计产生的群厂个性问题总数是多少？,"业务对象：技术问题
+目标表：dnmc_device_data
+履历类型：群厂个性问题
+指标关键词：合计、总数",SELECT COUNT(*) FROM dnmc_device_data;,
+所有电厂合计产生的经验反馈总数是多少？,"业务对象：经验反馈
+目标表：ads_cefs_data
+履历类型：经验反馈
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_cefs_data;,
+所有电厂合计产生的值长日报总数是多少？,"业务对象：值长日报
+目标表：ads_shift_supervisor_data
+履历类型：值长日报
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_shift_supervisor_data;,
+所有电厂合计产生的计划排程总数是多少？,"业务对象：计划排程
+目标表：ads_three_days_roll_plan
+履历类型：计划排程
+指标关键词：合计、总数",SELECT COUNT(*) FROM ads_three_days_roll_plan;,
+去年设备冷却水系统完成了多少个维修工单？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+通知单类型：全部（含：3类通知单）
+通知单状态：已完成（notice_status like ""NOCO""）
+基地：所有基地
+设备：设备冷却水系统
+时间段：去年
+指标关键词：多少",,
+今年大亚湾基地完成了多少次纠正性维修？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+通知单类型：纠正性维修
+通知单状态：已完成（notice_status like ""NOCO""）
+基地：大亚湾
+时间段：今年
+指标关键词：多少次",,
+上半年DY汽轮机厂房完成了多少次预防性维修？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+通知单类型：预防性维修
+通知单状态：已完成（notice_status like ""NOCO""）
+基地：DY（大亚湾）
+设备：汽轮机厂房
+时间段：上半年
+指标关键词：多少次",,
+ND今年完成了多少次SAP定期试验？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+通知单类型：预防性维修
+通知单状态：已完成（notice_status like ""NOCO""）
+基地：ND（宁德）
+时间段：今年
+指标关键词：多少次",,
+大亚湾基地哪些工单超期未完成？,"业务对象：维修通知单
+目标表：ads_sap_repair_data
+履历类型：通知单
+状态：超期未完成
+基地：大亚湾
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+大亚湾基地哪些值长日报超期未完成？,"业务对象：值长日报
+目标表：ads_shift_supervisor_data
+履历类型：值长日报
+状态：超期未完成
+基地：大亚湾
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+大亚湾基地哪些经验反馈超期未完成？,"业务对象：经验反馈
+目标表：ads_sap_tech_imo、ads_femp_general_data、dnmc_device_data
+履历类型：经验反馈
+状态：超期未完成
+基地：大亚湾
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+大亚湾基地哪些技术问题超期未完成？,"业务对象：技术问题
+目标表：ads_sap_repair_data
+履历类型：值长日报
+状态：超期未完成
+基地：大亚湾
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+ND哪些QDR超期未完成？,"业务对象：QDR
+目标表：ads_qdr_data
+履历类型：QDR
+状态：超期未完成
+基地：ND（宁德）
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+ND哪些I0超期未完成？,"业务对象：I0
+目标表：ads_i0_data
+履历类型：I0
+状态：超期未完成
+基地：ND（宁德）
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+ND哪些DER超期未完成？,"业务对象：DER
+目标表：ads_der_data
+履历类型：DER
+状态：超期未完成
+基地：ND（宁德）
+时间段：无（不限制）
+指标关键词：哪些（查询通知单号）",,
+去年大亚湾汽轮机厂房相关的维修工单有哪些？,,,
+大亚湾1号机有哪些【xx】类描述NG单？,"机组：大亚湾一号机 DY1   功能位置(func_pos)=""DY-1%""
+通知单类型（notice_type）：SAP纠正性维修（NG）
+通知单描述（notice_desc）：""%【xx】%""
+表：SAP维修模块数据（ads_sap_repair_data）","SELECT *
+FROM ads_sap_repair_data
+WHERE 
+    notice_iwerk = '大亚湾'
+    AND func_pos LIKE 'DY-1%'
+    AND notice_type = 'NG'
+    AND notice_desc LIKE '%【xx】%'
+",通知单类型：NG=SAP纠正性维修，NP=SAP预防性维修，NS=SAP定期试验
+大亚湾1号机有哪些关于【xxx】的NS单？,"机组：大亚湾一号机 DY1   功能位置(func_pos)=""DY-1%""
+通知单类型（notice_type）：SAP定期试验（NS）
+表：SAP维修模块数据（ads_sap_repair_data）
+通知单描述（notice_desc）：""%【xxx】%""","SELECT *
+FROM ads_sap_repair_data
+WHERE 
+    notice_iwerk = '大亚湾'
+    AND func_pos LIKE 'DY-1%'
+    AND notice_type = 'NS'
+    AND notice_desc LIKE '%【xxx】%'",通知单类型：NG=SAP纠正性维修，NP=SAP预防性维修，NS=SAP定期试验
+大亚湾1号机有哪些预防性维修单？,"机组：大亚湾一号机 DY1   功能位置(func_pos)=""DY-1%""
+通知单类型（notice_type）：SAP预防性维修（NP）
+表：SAP维修模块数据（ads_sap_repair_data）","SELECT *
+FROM ads_sap_repair_data
+WHERE 
+    notice_iwerk = '大亚湾'
+    AND func_pos LIKE 'DY-1%'
+    AND notice_type = 'NP'
+",通知单类型：NG=SAP纠正性维修，NP=SAP预防性维修，NS=SAP定期试验
+报告xxx的“健康分析”中，总计健康分析模型是多少个？,"查询表：大修报告健康分析表（oh_report_anal_health）
+报告编号：xxx（report_code: ""xxx""）
+筛选条件：总计健康分析模型（health_analysis_model_num）","SELECT sum(health_analysis_model_num)
+FROM oh_report_anal_health
+WHERE report_code = 'ND1N105000025'
+AND deleted_flag = '0'",
+"1. 大亚湾1号机2024年开始大修的大修报告有哪些？
+2. 大亚湾1号机大修开始时间在2024年的大修报告有哪些？","查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: ""DY""）
+机组：1号机（set_code: ""DY1""）
+大修开始日期：2024年  (oh_start_date: [""2024-01-01 00:00:00"", ""2024-12-31 23:59:59""])","SELECT *  
+FROM oh_report_info  
+WHERE set_code = 'DY1'  
+AND oh_start_date BETWEEN '2024-01-01' AND '2024-12-31'
+AND deleted_flag = '0'",
+"1. 大亚湾1号机2024年新增的大修报告有哪些？
+2. 大亚湾1号机创建时间在2024年的大修报告有哪些？","查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: ""DY""）
+机组：1号机（set_code: ""DY1""）
+报告创建日期：2024年  (oh_start_date: [""2024-01-01 00:00:00"", ""2024-12-31 23:59:59""])","SELECT *  
+FROM oh_report_info  
+WHERE set_code = 'DY1'  
+AND create_time BETWEEN '2024-01-01' AND '2024-12-31'
+AND deleted_flag = '0'",
+"1. 由“张三”负责分析的大修报告有哪些？
+2. 负责人为“张三”的大修报告有哪些？","查询表：大修报告主表（oh_report_info ）
+基地编码：红沿河（base_code: ""HY""）
+机组：1号机（set_code: ""HY1""）","SELECT 
+    report_code AS 报告编号,
+    responsible_person_name AS 负责人姓名
+FROM oh_report_info
+WHERE  responsible_person_name LIKE '%张三%'
+AND deleted_flag = '0'",
+"1. 大亚湾基地状态为“分析中”的大修报告有哪些？
+2. 大亚湾基地“分析中”的大修报告有哪些？","查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: ""DY""）
+状态：分析中（status: ""0""）","SELECT *
+FROM oh_report_info
+WHERE base_code = 'DY' 
+AND status = '0'
+AND deleted_flag = '0'","状态：
+0=分析中或编写中，1=校核中，2=已完成 ，3=再分析中，4=再校核中，5=已生效"
+"1. 大亚湾基地进展为“大修后跟踪”的大修报告有哪些？
+2. 大亚湾基地“大修后跟踪”的大修报告有哪些？","查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: ""DY""）
+进展：大修后跟踪","SELECT *
+FROM oh_report_info
+WHERE base_code = 'DY' 
+AND progress = '大修后跟踪'
+AND deleted_flag = '0'",进展：大修前分析，大修中分析，大修后跟踪
+在大亚湾基地结束大修的大修报告有哪些？,"查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: ""DY""）
+大修结束日期：","SELECT *
+FROM oh_report_info
+WHERE 
+    base_code = 'DY' 
+    AND oh_end_date IS NOT NULL 
+    AND deleted_flag = '0'",
+去年大亚湾汽轮机厂房相关的值长日报有哪些？,,,
+去年大亚湾汽轮机厂房相关的经验反馈有哪些？,,,
+去年大亚湾汽轮机厂房相关的技术问题有哪些？,,,
+去年大亚湾汽轮机厂房相关的一张清单一张网有哪些？,,,
+去年大亚湾汽轮机厂房相关的群厂共性问题有哪些？,,,
+去年大亚湾汽轮机厂房相关的群厂个性问题有哪些？,,,
+去年大亚湾汽轮机厂房相关的QDR有哪些？,,,
+去年大亚湾汽轮机厂房相关的I0有哪些？,,,
+去年大亚湾汽轮机厂房相关的DER有哪些？,,,
+去年各季度发起的工单数量趋势,,,
+去年各季度发起的值长日报数量趋势,,,
+去年各季度发起的经验反馈数量趋势,,,
+去年各季度发起的技术问题数量趋势,,,
+去年各季度发起的QDR数量趋势,,,
+去年各季度发起的I0数量趋势,,,
+去年各季度发起的DER数量趋势,,,
+去年各季度大亚湾汽轮机厂房新产生的工单及缺陷数量对比,,,

@@ -1,0 +1,540 @@
+
+你是一个 ClickHouse SQL 生成专家。当前的本地时间是 2025年12月23日 09:35
+请根据提供的数据库表结构和用户问题以及从相关文档中提取的案例信息，生成 SQL 查询语句。
+
+
+## 任务说明
+请按照以下步骤思考，最后生成SQL：
+
+### 第1步：理解用户问题
+【用户问题】
+大亚湾1号机状态为分析中的大修报告编号有哪些？
+请分析：
+- 分析用户的核心需求是什么
+- 识别问题中的关键实体和条件
+- 明确需要查询的数据维度
+- 判断是否有排序、分组、聚合等需求
+
+### 第2步：分析数据库结构
+【数据库表结构】
+[
+  {
+    "序号": 48,
+    "英文表名": "oh_report_anal_aft_resume_ai",
+    "中文表名": "大修后履历分析",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_aft_resume_ai\n(\n\n    `id` String COMMENT 主键,\n\n    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,\n\n    `object_code` Nullable(String) COMMENT 对象编码,\n\n    `notice_number` Nullable(String) COMMENT 通知单号,\n\n    `notice_type` Nullable(String) COMMENT 通知单类型,\n\n    `order_number` Nullable(String) COMMENT 工单号,\n\n    `func_pos` Nullable(String) COMMENT 功能位置,\n\n    `notice_desc` Nullable(String) COMMENT 通知单描述,\n\n    `order_version` Nullable(String) COMMENT 订单版本,\n\n    `has_relationed` Nullable(String) COMMENT 是否完成分析,\n\n    `suggestions` Nullable(String) COMMENT 大修关注建议,\n\n    `update_user` Nullable(String) COMMENT 修改人用户ID,\n\n    `update_user_name` Nullable(String) COMMENT 修改人姓名,\n\n    `update_time` DateTime DEFAULT now() COMMENT 修改时间,\n\n    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,\n\n    `create_time` DateTime DEFAULT now() COMMENT 创建时间,\n\n    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动\n)\nENGINE = ReplacingMergeTree\nPRIMARY KEY id\nORDER BY (id,\n report_code)\nSETTINGS index_granularity = 8192\nCOMMENT 大修后履历分析\n",
+    "关联表名": "oh_report_info_ai, oh_report_anal_oh_ex_ai",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键",
+      "report_code": "报告编号（关联外键：oh_report_info.report_code）",
+      "object_code": "对象编码",
+      "notice_number": "通知单号",
+      "notice_type": "通知单类型",
+      "order_number": "工单号",
+      "func_pos": "功能位置",
+      "notice_desc": "通知单描述",
+      "order_version": "订单版本",
+      "has_relationed": "是否完成分析",
+      "suggestions": "大修关注建议",
+      "update_user": "修改人用户ID",
+      "update_user_name": "修改人姓名",
+      "update_time": "修改时间",
+      "deleted_flag": "逻辑删除字段",
+      "create_time": "创建时间",
+      "source_type": "来源类型：0=手动，1=自动"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "Nullable(String)",
+      "notice_number": "Nullable(String)",
+      "notice_type": "Nullable(String)",
+      "order_number": "Nullable(String)",
+      "func_pos": "Nullable(String)",
+      "notice_desc": "Nullable(String)",
+      "order_version": "Nullable(String)",
+      "has_relationed": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 00102a4d74e24dd19bb38c29b4c3a396 | report_code: ND1N104000004 | object_code: ND1CRF002MO&MOHB01 | notice_number: 200004494535 | notice_type: NP | order_number: 800002248614 | func_pos: ND-1-31-CRF-002MO | notice_desc: 电动机解体检查： | order_version: ND104 | has_relationed: 0 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-11 11:13:43 | deleted_flag: 0 | create_time: 2025-11-11 11:13:43 | source_type: 1",
+      "Row 2: id: 00289c7179dd4258841e9440699cf6a6 | report_code: ND1N105000031 | object_code: ND1CRF001MO&MOHB01 | notice_number: 200006191342 | notice_type: NP | order_number: 800005666774 | func_pos: ND-1-31-CRF-001MO | notice_desc: 【无需处理】1CRF001MO顶部黄色支架振动明显，请处理 | order_version: N105 | has_relationed: 0 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 14:57:15 | deleted_flag: 0 | create_time: 2025-11-07 14:57:15 | source_type: 1",
+      "Row 3: id: 0073ee84d27f43bba796311fa515d2f1 | report_code: ND1N104000006 | object_code: ND1CRF001MO&MOHB01 | notice_number: 200004492089 | notice_type: NP | order_number: 800002246226 | func_pos: ND-1-31-CRF-001MO | notice_desc: 循环水泵电动机机械检查；电机径向轴承和推力轴承润滑油更换并化验；电机表面清洁检查 | order_version: ND104 | has_relationed: 0 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-11 11:14:20 | deleted_flag: 0 | create_time: 2025-11-11 11:14:20 | source_type: 1",
+      "Row 4: id: 00fe68d54cdf42afabdb1e94eb31797f | report_code: ND1N105000038 | object_code: ND1CRF001RR&RRGA01 | notice_number: 200005966099 | notice_type: NP | order_number: 800002958958 | func_pos: ND-1-31-CRF-001RR | notice_desc: 全面检查循环水泵齿轮箱，并对齿轮箱换油 | order_version: ND105 | has_relationed: 0 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-10 18:14:41 | deleted_flag: 0 | create_time: 2025-11-10 18:14:41 | source_type: 1",
+      "Row 5: id: 0164f05f2e95410cb65d184b94781459 | report_code: ND1N105000021 | object_code: ND1CRF001RR&RRGA01 | notice_number: 200005966099 | notice_type: NP | order_number: 800002958958 | func_pos: ND-1-31-CRF-001RR | notice_desc: 全面检查循环水泵齿轮箱，并对齿轮箱换油 | order_version: ND105 | has_relationed: 0 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-06-13 17:14:17 | deleted_flag: 0 | create_time: 2025-06-13 17:14:17 | source_type: 1"
+    ]
+  },
+  {
+    "序号": 49,
+    "英文表名": "oh_report_anal_daily_ex_ai",
+    "中文表名": "大修报告日常新增异常分析表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_daily_ex_ai(    `id` String COMMENT 主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `notice_number` Nullable(String) COMMENT 通知单号,    `order_number` Nullable(String) COMMENT 工单号,    `func_pos` Nullable(String) COMMENT 功能位置,    `notice_desc` Nullable(String) COMMENT 通知单描述,    `priority_code` Nullable(String) COMMENT 优先级编号,    `order_version` Nullable(String) COMMENT 订单版本,    `deal_with_this_time` Int8 DEFAULT 0 COMMENT 是否本轮大修处理：0=否，1=是,    `anal_event_type` Nullable(Int32) COMMENT 事件类别：1=CCM失效，2=CCM降级，3=其他类别,    `anal_risk_type1` Nullable(Int32) COMMENT 停机风险类别,    `anal_risk_type2` Nullable(Int32) COMMENT 停堆风险类别,    `unit_impact_analysis` Nullable(String) COMMENT 机组影响分析,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code)SETTINGS index_granularity = 8192COMMENT 大修报告日常新增异常分析表",
+    "关联表名": "oh_report_info_ai, oh_report_anal_oh_ex_ai",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `notice_number` Nullable(String) COMMENT 通知单号,    `order_number` Nullable(String) COMMENT 工单号,    `func_pos` Nullable(String) COMMENT 功能位置,    `notice_desc` Nullable(String) COMMENT 通知单描述,    `priority_code` Nullable(String) COMMENT 优先级编号,    `order_version` Nullable(String) COMMENT 订单版本,    `deal_with_this_time` Int8 DEFAULT 0 COMMENT 是否本轮大修处理：0=否，1=是,    `anal_event_type` Nullable(Int32) COMMENT 事件类别：1=CCM失效，2=CCM降级，3=其他类别,    `anal_risk_type1` Nullable(Int32) COMMENT 停机风险类别,    `anal_risk_type2` Nullable(Int32) COMMENT 停堆风险类别,    `unit_impact_analysis` Nullable(String) COMMENT 机组影响分析,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "Nullable(String)",
+      "notice_number": "Nullable(String)",
+      "order_number": "Nullable(String)",
+      "func_pos": "Nullable(String)",
+      "notice_desc": "Nullable(String)",
+      "priority_code": "Nullable(String)",
+      "order_version": "Nullable(String)",
+      "deal_with_this_time": "Int8",
+      "anal_event_type": "Nullable(Int32)",
+      "anal_risk_type1": "Nullable(Int32)",
+      "anal_risk_type2": "Nullable(Int32)",
+      "unit_impact_analysis": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 00004722fedd4f6286b296fad1a70744 | report_code: ND1N105000036 | object_code: ND1CRF001PO&POZB01 | notice_number: 200004680001 | order_number: 800002335461 | func_pos: ND-1-31-CRF-001PO | notice_desc: （子票）（已核实）1CRF001PO泵推力轴承室油位计渗油，请处理。 | priority_code: 8 | order_version: ND104 | deal_with_this_time: 0 | anal_event_type: None | anal_risk_type1: None | anal_risk_type2: None | unit_impact_analysis:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 16:11:27 | deleted_flag: 0 | create_time: 2025-11-07 16:11:27 | source_type: 1",
+      "Row 2: id: 0001e28ec5f24589a709b1ea0177320b | report_code: ND1N106000003 | object_code: ND1CRF001PO&RRCB02 | notice_number: 200003650511 | order_number:  | func_pos: ND-1-31-CRF-001PO | notice_desc: [事件单]主控闪发1CRF063KA（001PO电机泄漏液位高）。 | priority_code: 3 | order_version:  | deal_with_this_time: 0 | anal_event_type: None | anal_risk_type1: None | anal_risk_type2: None | unit_impact_analysis:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-01-17 19:44:01 | deleted_flag: 0 | create_time: 2025-01-17 19:44:01 | source_type: 1",
+      "Row 3: id: 00027a78e77d4b4087d20d7dacd82316 | report_code: ND1N105000024 | object_code: ND1CRF001RR&RRGA01 | notice_number: 200007141324 | order_number: 800003561643 | func_pos: ND-1-31-CRF-001RR | notice_desc: 1CRF001RR润滑油取样分析通知单 | priority_code: 6 | order_version: 2020W05Z | deal_with_this_time: 0 | anal_event_type: None | anal_risk_type1: None | anal_risk_type2: None | unit_impact_analysis:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-05-27 00:20:56 | deleted_flag: 2 | create_time: 2025-05-27 00:20:56 | source_type: 1",
+      "Row 4: id: 0002ec6e3d154b6fb00441c81b3c995c | report_code: ND1N106000030 | object_code: ND1CRF001RR&RRGA01 | notice_number: 200002432217 | order_number:  | func_pos: ND-1-31-CRF-001RR | notice_desc: 【ND102】配合焊接：800000782962 | priority_code: 4 | order_version:  | deal_with_this_time: 0 | anal_event_type: None | anal_risk_type1: None | anal_risk_type2: None | unit_impact_analysis:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-11 16:29:31 | deleted_flag: 0 | create_time: 2025-11-11 16:29:31 | source_type: 1",
+      "Row 5: id: 0004de611d4f4752856d6ea8ec3668d6 | report_code: ND1N105000028 | object_code: ND1CRF001MO&MOHB01 | notice_number: 200003651435 | order_number: 800001816916 | func_pos: ND-1-31-CRF-001MO | notice_desc: 【P06票补单】1CRF001MO电机空冷器液位高报警，需处理 | priority_code: 6 | order_version: 2016W51K | deal_with_this_time: 0 | anal_event_type: None | anal_risk_type1: None | anal_risk_type2: None | unit_impact_analysis:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-05-27 02:14:34 | deleted_flag: 2 | create_time: 2025-05-27 02:14:34 | source_type: 1"
+    ]
+  },
+  {
+    "序号": 50,
+    "英文表名": "oh_report_anal_der_ai",
+    "中文表名": "大修新增DER分析表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_der_ai\n(\n\n    `id` String COMMENT 主键,\n\n    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,\n\n    `object_code` Nullable(String) COMMENT 对象编码,\n\n    `der_code` Nullable(String) COMMENT QDR编码,\n\n    `notice_number` Nullable(String) COMMENT 通知单号,\n\n    `notice_number_data` Nullable(String) COMMENT 通知单号的JSON数据,\n\n    `order_number` Nullable(String) COMMENT 工单号,\n\n    `func_pos` Nullable(String) COMMENT 功能位置,\n\n    `if_ccm` Nullable(String) COMMENT 是否CCM,\n\n    `proc_inst_status` Nullable(String) COMMENT 流程状态,\n\n    `has_relationed` Nullable(String) COMMENT 是否完成分析,\n\n    `suggestions` Nullable(String) COMMENT 大修关注建议,\n\n    `update_user` Nullable(String) COMMENT 修改人工号,\n\n    `update_user_name` Nullable(String) COMMENT 修改人姓名,\n\n    `update_time` DateTime DEFAULT now() COMMENT 修改时间,\n\n    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,\n\n    `create_time` DateTime DEFAULT now() COMMENT 创建时间,\n\n    `source_id` Nullable(String) COMMENT 来源ID,\n\n    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动\n)\nENGINE = ReplacingMergeTree\nPRIMARY KEY id\nORDER BY (id,\n report_code)\nSETTINGS index_granularity = 8192\nCOMMENT 大修新增DER分析表\n",
+    "关联表名": "oh_report_info, oh_report_anal_oh_ex, oh_report_anal_qdr",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键",
+      "report_code": "报告编号（关联外键：oh_report_info.report_code）",
+      "object_code": "对象编码",
+      "der_code": "QDR编码",
+      "notice_number": "通知单号",
+      "notice_number_data": "通知单号的JSON数据",
+      "order_number": "工单号",
+      "func_pos": "功能位置",
+      "if_ccm": "是否CCM",
+      "proc_inst_status": "流程状态",
+      "has_relationed": "是否完成分析",
+      "suggestions": "大修关注建议",
+      "update_user": "修改人工号",
+      "update_user_name": "修改人姓名",
+      "update_time": "修改时间",
+      "deleted_flag": "逻辑删除字段",
+      "create_time": "创建时间",
+      "source_id": "来源ID",
+      "source_type": "来源类型：0=手动，1=自动"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "Nullable(String)",
+      "der_code": "Nullable(String)",
+      "notice_number": "Nullable(String)",
+      "notice_number_data": "Nullable(String)",
+      "order_number": "Nullable(String)",
+      "func_pos": "Nullable(String)",
+      "if_ccm": "Nullable(String)",
+      "proc_inst_status": "Nullable(String)",
+      "has_relationed": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "source_id": "Nullable(String)",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 01c7e053a56ef07dcecad063e590c3a5 | report_code: ND1N105000035 | object_code: ND1CRF001MO&MOHB01 | der_code: EMC-202006-000test1 | notice_number:  | notice_number_data: [{\"orderNo\": \"800003790635\", \"dataMark\": \"fmod\", \"noticeCode\": \"200007605173\", \"noticeType\": \"NG\"}, {\"dataMark\": \"fmod\", \"noticeCode\": \"200007582166\", \"noticeType\": \"NG\"}, {\"orderNo\": \"800003415620\", \"dataMark\": \"fmod\", \"noticeCode\": \"200006827260\", \"noticeType\": \"NG\"}] | order_number:  | func_pos: ND-1-31-CRF-001RR | if_ccm:  | proc_inst_status: 永久关闭 | has_relationed: 1 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 16:45:50 | deleted_flag: 0 | create_time: 2025-11-07 16:45:51 | source_id: EMC-202006-000test1 | source_type: 1",
+      "Row 2: id: 038d130c067c736ef4c357070cb76267 | report_code: ND1N105000030 | object_code: ND1CRF001MO&RRCB01 | der_code: EMC-202006-000test1 | notice_number:  | notice_number_data: [{\"orderNo\": \"800003415620\", \"dataMark\": \"fmod\", \"noticeCode\": \"200006827260\"}] | order_number:  | func_pos: ND-2-31-CRF-001FI | if_ccm:  | proc_inst_status: 永久关闭 | has_relationed: 1 | suggestions:  | update_user: P635920 | update_user_name: [P635920]刘庆 | update_time: 2025-10-31 15:46:47 | deleted_flag: 0 | create_time: 2025-06-12 19:47:25 | source_id: EMC-202006-000test2 | source_type: 1",
+      "Row 3: id: 03c10d43fd28d5198be7642d5b46f89b | report_code: ND1N105000031 | object_code: ND1CRF001MO&RRCB01 | der_code: EMC-202006-000test1 | notice_number:  | notice_number_data: [{\"orderNo\": \"800003415620\", \"dataMark\": \"fmod\", \"noticeCode\": \"200006827260\", \"noticeType\": \"NG\"}] | order_number:  | func_pos: ND-1-31-CRF-001RR | if_ccm:  | proc_inst_status: 永久关闭 | has_relationed: 1 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 14:42:14 | deleted_flag: 0 | create_time: 2025-11-07 14:42:15 | source_id: EMC-202006-000test1 | source_type: 1",
+      "Row 4: id: 04f70aef0201ca77ccf4e22bf1863581 | report_code: ND1N105000026 | object_code: ND1CRF001RR&RRGA01 | der_code: EMC-202006-000test1 | notice_number:  | notice_number_data: [{\"orderNo\": \"800003790635\", \"dataMark\": \"fmod\", \"noticeCode\": \"200007605173\"}, {\"orderNo\": \"800003415620\", \"dataMark\": \"fmod\", \"noticeCode\": \"200006827260\"}] | order_number:  | func_pos: ND-2-31-CRF-001FI | if_ccm:  | proc_inst_status: 永久关闭 | has_relationed: 1 | suggestions:  | update_user: P638301 | update_user_name: [P638301]李利钊 | update_time: 2025-10-30 14:15:25 | deleted_flag: 0 | create_time: 2025-06-12 19:10:37 | source_id: EMC-202006-000test2 | source_type: 1",
+      "Row 5: id: 05fb6a30b13e44b873906086cf3ae82d | report_code: ND1N105000020 | object_code: ND1CRF001MO&RRCB01 | der_code: EMC-202006-000test2 | notice_number:  | notice_number_data: [{\"orderNo\": \"800003415620\", \"dataMark\": \"fmod\", \"noticeCode\": \"200006827260\"}] | order_number:  | func_pos: ND-2-31-CRF-001FI | if_ccm:  | proc_inst_status: 永久关闭 | has_relationed: 1 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-06-12 19:45:23 | deleted_flag: 0 | create_time: 2025-06-12 19:45:24 | source_id: EMC-202006-000test2 | source_type: 1"
+    ]
+  },
+  {
+    "序号": 51,
+    "英文表名": "oh_report_anal_exp_fb_ai",
+    "中文表名": "大修报告经验反馈分析表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_exp_fb_ai(    `id` String COMMENT 主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `feedback_source` Nullable(String) COMMENT 反馈来源,    `source_code` Nullable(String) COMMENT 来源编码,    `func_pos` Nullable(String) COMMENT 功能位置,    `feedback_desc` Nullable(String) COMMENT 反馈内容,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `feedback_source_id` Nullable(String) COMMENT 反馈来源ID,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code)SETTINGS index_granularity = 8192COMMENT 大修报告经验反馈分析表",
+    "关联表名": "oh_report_info, oh_report_anal_oh_ex",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `feedback_source` Nullable(String) COMMENT 反馈来源,    `source_code` Nullable(String) COMMENT 来源编码,    `func_pos` Nullable(String) COMMENT 功能位置,    `feedback_desc` Nullable(String) COMMENT 反馈内容,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `feedback_source_id` Nullable(String) COMMENT 反馈来源ID,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "Nullable(String)",
+      "feedback_source": "Nullable(String)",
+      "source_code": "Nullable(String)",
+      "func_pos": "Nullable(String)",
+      "feedback_desc": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "feedback_source_id": "Nullable(String)",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 16b45b20a2c8fa6d6738f4d7dde3587e | report_code: YJ3Y306000002 | object_code:  | feedback_source: SAP纠正性维修 | source_code: 200011955071 | func_pos: YJ-7-33-JPI-199VE | feedback_desc: 校准、测试等操作缺乏标准化流程，导致数据偏差或误操作 | suggestions: 而无法全方位 | update_user: P635049 | update_user_name: [P635049]刘坤 | update_time: 2024-09-22 09:18:31 | deleted_flag: 0 | create_time: 2024-09-22 09:18:31 | feedback_source_id: 200011955071 | source_type: 0",
+      "Row 2: id: 4853cdf2d5da4b41eec17fde63edcb6d | report_code: YJ3Y306000002 | object_code: YJ3CGR001FI&FINC31 | feedback_source: SAP纠正性维修 | source_code: 200011955072 | func_pos: YJ-7-14-REN-330VD | feedback_desc: 报警阈值设置不合理，频繁误触发影响运行效率 | suggestions: 去服务器 | update_user: P635049 | update_user_name: [P635049]刘坤 | update_time: 2024-09-22 09:18:31 | deleted_flag: 0 | create_time: 2024-09-22 09:18:31 | feedback_source_id: 200011955072 | source_type: 0",
+      "Row 3: id: 4f2a5af21c2b46f361992e11f51f7241 | report_code: DY1D126000005 | object_code: DY1CRF002RR&RRGA10 | feedback_source: SAP纠正性维修 | source_code: 200011955045 | func_pos: LA-0-33-JPU-110BI | feedback_desc: 阀门操作时阻力过大，导致手动操作时间超出预期。\n共性问题：设备润滑不足或部件磨损 | suggestions:  | update_user: P640777 | update_user_name: [P640777]郭进 | update_time: 2024-11-05 19:11:35 | deleted_flag: 0 | create_time: 2024-11-05 19:11:35 | feedback_source_id: 200011955045 | source_type: 0",
+      "Row 4: id: 565f9e1cdd6f4e276af4aa618ad3357f | report_code: YJ1Y108000022 | object_code: YJ1CGR001RR&RRGA30 | feedback_source: SAP纠正性维修 | source_code: 200011955071 | func_pos: YJ-7-33-JPI-199VE | feedback_desc: 这是手动新增的一个 | suggestions:  | update_user:  | update_user_name:  | update_time: 2024-09-23 19:30:46 | deleted_flag: 0 | create_time: 2024-09-23 19:30:47 | feedback_source_id: 200011955071 | source_type: 0",
+      "Row 5: id: 9991b911071b0426fb9bd43bc80e7fcf | report_code: DY1D126000005 | object_code: DY1CRF001RR&RRGA10 | feedback_source: SAP纠正性维修 | source_code: 200011954948 | func_pos: DY-1-33-JDT | feedback_desc: 振动传感器数据异常频繁触发报警，经排查发现传感器安装螺栓松动。\n共性问题：设备固定部件维护不足 | suggestions:  | update_user: P640777 | update_user_name: [P640777]郭进 | update_time: 2024-11-05 19:11:35 | deleted_flag: 0 | create_time: 2024-11-05 19:11:35 | feedback_source_id: 200011954948 | source_type: 0"
+    ]
+  },
+  {
+    "序号": 52,
+    "英文表名": "oh_report_anal_health_ai",
+    "中文表名": "大修报告健康分析表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_health_ai\n(\n\n    `id` String COMMENT 主键,\n\n    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,\n\n    `object_code` String COMMENT 对象编码,\n\n    `health_analysis_model_num` Int32 DEFAULT 0 COMMENT 总计健康分析模型,\n\n    `degraded_number` Int32 DEFAULT 0 COMMENT 本循环累计健康降级数量,\n\n    `trend_overview` Nullable(String) COMMENT 趋势综述,\n\n    `suggestions` Nullable(String) COMMENT 大修关注建议,\n\n    `update_user` Nullable(String) COMMENT 修改人用户ID,\n\n    `update_user_name` Nullable(String) COMMENT 修改人姓名,\n\n    `update_time` DateTime DEFAULT now() COMMENT 修改时间,\n\n    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,\n\n    `create_time` DateTime DEFAULT now() COMMENT 创建时间,\n\n    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动\n)\nENGINE = ReplacingMergeTree\nPRIMARY KEY id\nORDER BY (id, report_code, object_code)\nSETTINGS index_granularity = 8192\nCOMMENT 大修报告健康分析表\n",
+    "关联表名": "oh_report_info_ai, oh_report_anal_monitor_ai, oh_report_anal_aft_health_ai, oh_report_anal_re_view_ai",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键",
+      "report_code": "报告编号（关联外键：oh_report_info.report_code）",
+      "object_code": "对象编码",
+      "health_analysis_model_num": "总计健康分析模型",
+      "degraded_number": "本循环累计健康降级数量",
+      "trend_overview": "趋势综述",
+      "suggestions": "大修关注建议",
+      "update_user": "修改人用户ID",
+      "update_user_name": "修改人姓名",
+      "update_time": "修改时间",
+      "deleted_flag": "逻辑删除字段",
+      "create_time": "创建时间",
+      "source_type": "来源类型：0=手动，1=自动"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "String",
+      "health_analysis_model_num": "Int32",
+      "degraded_number": "Int32",
+      "trend_overview": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 005b8d2421cd15971560d4acb4e3cb5e | report_code: HY1H110000002 | object_code: HY1CGR005PO&POPE20 | health_analysis_model_num: 0 | degraded_number: 0 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2024-09-12 09:42:24 | deleted_flag: 0 | create_time: 2024-09-12 09:42:24 | source_type: 1",
+      "Row 2: id: 00905a18a147b95a21860763b7aa6a83 | report_code: ND1N105000004 | object_code: ND1CRF001PO&POZB01 | health_analysis_model_num: 0 | degraded_number: 0 | trend_overview:  | suggestions:  | update_user: P640777 | update_user_name: [P640777]郭进 | update_time: 2024-12-23 14:21:19 | deleted_flag: 0 | create_time: 2024-12-23 09:25:03 | source_type: 1",
+      "Row 3: id: 00ffb836ce0151ce9a3c7498047d0aea | report_code: YJ1Y109000004 | object_code: YJ1CRF001PO&POCA30 | health_analysis_model_num: 2 | degraded_number: 2 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2024-09-24 06:00:24 | deleted_flag: 0 | create_time: 2024-09-24 06:00:25 | source_type: 1",
+      "Row 4: id: 0115a9a6f129ddaa42315424fe0cbd3b | report_code: YJ5Y506000001 | object_code: YJ5CGR001FI&FINC31 | health_analysis_model_num: 0 | degraded_number: 0 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 14:37:19 | deleted_flag: 0 | create_time: 2025-11-07 14:37:19 | source_type: 1",
+      "Row 5: id: 019fbe30c1146538b139f39826673269 | report_code: TS1T103000007 | object_code: TS1CRF1120RR-&RRGA40 | health_analysis_model_num: 9 | degraded_number: 0 | trend_overview:  | suggestions:  | update_user: P640431 | update_user_name: [P640431]季久伟 | update_time: 2024-10-14 09:30:08 | deleted_flag: 0 | create_time: 2024-10-14 09:19:47 | source_type: 1"
+    ]
+  },
+  {
+    "序号": 54,
+    "英文表名": "oh_report_anal_monitor_ai",
+    "中文表名": "大修报告状态监测分析表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_monitor_ai(    `id` String COMMENT 主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` String COMMENT 对象编码,    `effective_monitor_points` Int32 DEFAULT 0 COMMENT 总计有效监测点,    `alarms_number` Int32 DEFAULT 0 COMMENT 本循环累计报警数量,    `trend_overview` Nullable(String) COMMENT 趋势综述,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `ext_data_json` Nullable(String) COMMENT 扩展JSON数据,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code, object_code)SETTINGS index_granularity = 8192COMMENT 大修报告状态监测分析表",
+    "关联表名": "oh_report_info_ai, oh_report_anal_health_ai, oh_report_anal_aft_monitor_ai, oh_report_anal_re_view_ai",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` String COMMENT 对象编码,    `effective_monitor_points` Int32 DEFAULT 0 COMMENT 总计有效监测点,    `alarms_number` Int32 DEFAULT 0 COMMENT 本循环累计报警数量,    `trend_overview` Nullable(String) COMMENT 趋势综述,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `ext_data_json` Nullable(String) COMMENT 扩展JSON数据,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code, object_code"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "String",
+      "effective_monitor_points": "Int32",
+      "alarms_number": "Int32",
+      "trend_overview": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "ext_data_json": "Nullable(String)",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 0017fcb8e76f6c16d8eb9bd9d435df02 | report_code: ND1N107000003 | object_code: ND1CRF001MO&MOHB01 | effective_monitor_points: 0 | alarms_number: 0 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-01-20 14:03:09 | deleted_flag: 0 | create_time: 2025-01-20 14:03:10 | ext_data_json:  | source_type: 1",
+      "Row 2: id: 0077f999ad4393867f81431e194002f0 | report_code: ND1N105000030 | object_code: ND1CRF001MO&RRCB01 | effective_monitor_points: 0 | alarms_number: 0 | trend_overview:  | suggestions:  | update_user: P635920 | update_user_name: [P635920]刘庆 | update_time: 2025-10-31 15:46:46 | deleted_flag: 0 | create_time: 2025-06-11 17:25:49 | ext_data_json:  | source_type: 1",
+      "Row 3: id: 00d3f8df38ae9707376e9c1dcee7f18b | report_code: ND1N106000001 | object_code: ND1CRF001PO&RRCB02 | effective_monitor_points: 0 | alarms_number: 0 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-01-17 19:43:44 | deleted_flag: 0 | create_time: 2025-01-17 19:43:45 | ext_data_json:  | source_type: 1",
+      "Row 4: id: 01087edf7bb8489b63ab5eb0eaf36ede | report_code: HY1H109000005 | object_code: HY1CRF001MO&MOHB20 | effective_monitor_points: 0 | alarms_number: 0 | trend_overview:  | suggestions:  | update_user: P620611 | update_user_name: [P620611]陈昌民 | update_time: 2025-03-28 19:30:23 | deleted_flag: 0 | create_time: 2025-02-28 06:00:37 | ext_data_json: {\"alarmsMptCode\": \"HY4CRF002PO.GCH.BRb_Si\"} | source_type: 1",
+      "Row 5: id: 014e55803ee38107dbe1b07f73296e22 | report_code: ND1N107000001 | object_code: ND1CRF001MO&RRCB01 | effective_monitor_points: 0 | alarms_number: 0 | trend_overview:  | suggestions:  | update_user:  | update_user_name:  | update_time: 2024-12-20 09:36:31 | deleted_flag: 0 | create_time: 2024-12-20 09:36:31 | ext_data_json:  | source_type: 1"
+    ]
+  },
+  {
+    "序号": 57,
+    "英文表名": "oh_report_anal_pm_ai",
+    "中文表名": "大修报告确定预防性维修清单表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_anal_pm_ai(    `id` String COMMENT 主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `object_code_start` Nullable(String) COMMENT 记录自动带出的对象编码,    `outline_order` Nullable(String) COMMENT 大纲工单(大纲工单去前面的0),    `notice_number` Nullable(String) COMMENT 通知单号,    `order_number` Nullable(String) COMMENT 工单号,    `func_pos` Nullable(String) COMMENT 功能位置,    `notice_desc` Nullable(String) COMMENT 通知单描述,    `order_version` Nullable(String) COMMENT 订单版本,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code)SETTINGS index_granularity = 8192COMMENT 大修报告确定预防性维修清单表",
+    "关联表名": "oh_report_info_ai, oh_report_anal_regular_test_ai, oh_report_anal_oh_ex_ai",
+    "表关键字": "",
+    "字段映射": {
+      "id": "主键,    `report_code` String COMMENT 报告编号（关联外键：oh_report_info.report_code）,    `object_code` Nullable(String) COMMENT 对象编码,    `object_code_start` Nullable(String) COMMENT 记录自动带出的对象编码,    `outline_order` Nullable(String) COMMENT 大纲工单(大纲工单去前面的0),    `notice_number` Nullable(String) COMMENT 通知单号,    `order_number` Nullable(String) COMMENT 工单号,    `func_pos` Nullable(String) COMMENT 功能位置,    `notice_desc` Nullable(String) COMMENT 通知单描述,    `order_version` Nullable(String) COMMENT 订单版本,    `suggestions` Nullable(String) COMMENT 大修关注建议,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `create_time` DateTime DEFAULT now() COMMENT 创建时间,    `source_type` Int32 DEFAULT 0 COMMENT 来源类型：0=手动，1=自动)ENGINE = ReplacingMergeTreePRIMARY KEY idORDER BY (id, report_code"
+    },
+    "字段类型": {
+      "id": "String",
+      "report_code": "String",
+      "object_code": "Nullable(String)",
+      "object_code_start": "Nullable(String)",
+      "outline_order": "Nullable(String)",
+      "notice_number": "Nullable(String)",
+      "order_number": "Nullable(String)",
+      "func_pos": "Nullable(String)",
+      "notice_desc": "Nullable(String)",
+      "order_version": "Nullable(String)",
+      "suggestions": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "create_time": "DateTime",
+      "source_type": "Int32"
+    },
+    "样例数据": [
+      "Row 1: id: 005b2046143afda91212bc2ecab8a7cc | report_code: ND1N105000026 | object_code: ND1CRF001MO&MOHB01 | object_code_start: ND1CRF001MO&MOHB01 | outline_order: 000000400005 | notice_number: 200011861490 | order_number: 800005666774 | func_pos: ND-1-31-CRF-001MO | notice_desc: 【SRT转大修】[经验反馈]1CRF001MO电流互感器二次接线与图纸一致性排查 | order_version: N105 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-05-27 01:17:25 | deleted_flag: 2 | create_time: 2025-05-27 01:17:26 | source_type: 1",
+      "Row 2: id: 00ede76b982eda709748d2322f8d01cc | report_code: ND1N106000024 | object_code: ND1CRF001RR&RRGA01 | object_code_start: ND1CRF001MO&MOHB01 | outline_order: 000040122001 | notice_number: 200008075024 | order_number: 800003986846 | func_pos: ND-1-31-CRF-001MO | notice_desc: 中性点电流互感器端子箱定期检查 | order_version: ND106 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-11 16:43:29 | deleted_flag: 0 | create_time: 2025-11-11 16:43:29 | source_type: 1",
+      "Row 3: id: 00ef01ae37f3c8ccc731e417e13ae0b0 | report_code: ND1N106000036 | object_code: ND1CRF001PO&POZB01 | object_code_start: ND1CRF001PO&POZB01 | outline_order: 000040058623 | notice_number: 200007371037 | order_number: 800003647998 | func_pos: ND-1-31-CRF-002PO | notice_desc: 循环水泵水下1C机械检查 | order_version: ND106 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-11 16:29:55 | deleted_flag: 0 | create_time: 2025-11-11 16:29:56 | source_type: 1",
+      "Row 4: id: 01450ed748c571d22ac61bafc8bb0000 | report_code: ND1N104000026 | object_code: ND1CRF001PO&RRCB02 | object_code_start: ND1CRF001MO&MOHB01 | outline_order: 000040013011 | notice_number: 200004492670 | order_number: 800002246790 | func_pos: ND-1-31-CRF-002MO | notice_desc: 6.6kV高压电动机定期检查 | order_version: ND104 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-11-07 14:41:47 | deleted_flag: 0 | create_time: 2025-11-07 14:41:48 | source_type: 1",
+      "Row 5: id: 016dafb22b50992cf6b283f2840b34af | report_code: ND1N105000024 | object_code: ND1CRF001RR&RRGA01 | object_code_start: ND1CRF001MO&MOHB01 | outline_order: 000000400005 | notice_number: 200006191342 | order_number: 800005666774 | func_pos: ND-1-31-CRF-001MO | notice_desc: 【无需处理】1CRF001MO顶部黄色支架振动明显，请处理 | order_version: N105 | suggestions:  | update_user:  | update_user_name:  | update_time: 2025-05-27 01:31:29 | deleted_flag: 2 | create_time: 2025-05-27 01:31:29 | source_type: 1"
+    ]
+  },
+  {
+    "序号": 62,
+    "英文表名": "oh_report_info_ai",
+    "中文表名": "大修报告主表",
+    "一级业务模块": "大修分析",
+    "二级业务模块": "大修分析",
+    "建表语句": "CREATE TABLE oh_report_info_ai(    `report_code` String COMMENT 报告编号,    `report_name` Nullable(String) COMMENT 报告名称,    `template_code` String COMMENT 模板编码（关联外键：oh_tmpl_info.template_code）,    `proc_id` Nullable(String) COMMENT 流程提交的FormNo前缀,    `base_code` Nullable(String) COMMENT 基地编码,    `set_code` Nullable(String) COMMENT 机组,    `overhaul_rounds` Nullable(String) COMMENT 大修轮次,    `progress` Nullable(String) COMMENT 进展：大修前分析，大修中分析，大修后跟踪,    `status` Int32 DEFAULT 0 COMMENT 状态：0=分析中，1=校核中，2=已完成 ，3=再分析中，4=再校核中，5=已生效,    `responsible_person` Nullable(String) COMMENT 分析对象负责人,    `responsible_person_name` Nullable(String) COMMENT 分析对象负责人姓名,    `concerns_number` Int32 DEFAULT 0 COMMENT 输出关注数量,    `keyword` Nullable(String) COMMENT 综合查询字段,    `last_round_end_time` Nullable(DateTime) COMMENT 上轮大修结束,    `oh_start_date` Nullable(DateTime) COMMENT 大修开始日期,    `oh_plan_start_date` Nullable(String) COMMENT 大修计划开始日期,    `oh_end_date` Nullable(DateTime) COMMENT 大修结束日期,    `pre_last_flush_time` Nullable(DateTime) COMMENT 大修前的最后刷新时间,    `in_last_flush_time` Nullable(DateTime) COMMENT 大修中的最后刷新时间,    `aft_last_flush_time` Nullable(DateTime) COMMENT 大修后的最后刷新时间,    `tracking_date` Nullable(Int32) COMMENT 大修后跟踪(单位周),    `tmpl_version` Nullable(String) DEFAULT 1.0 COMMENT 模板版本（关联外键：oh_tmpl_info.version）,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `need_flush` Int8 DEFAULT 1 COMMENT 是否需要刷新：0=表示当前大修报告不再需要维护更新,    `create_time` DateTime DEFAULT now() COMMENT 创建时间)ENGINE = ReplacingMergeTreePRIMARY KEY report_codeORDER BY report_codeSETTINGS index_granularity = 8192COMMENT 大修报告主表",
+    "关联表名": "omp_nuclesus_item_ai, oh_report_anal_monitor_ai, oh_report_anal_health_ai, oh_report_anal_oh_ex_ai",
+    "表关键字": "",
+    "字段映射": {
+      "report_code": "报告编号,    `report_name` Nullable(String) COMMENT 报告名称,    `template_code` String COMMENT 模板编码（关联外键：oh_tmpl_info.template_code）,    `proc_id` Nullable(String) COMMENT 流程提交的FormNo前缀,    `base_code` Nullable(String) COMMENT 基地编码,    `set_code` Nullable(String) COMMENT 机组,    `overhaul_rounds` Nullable(String) COMMENT 大修轮次,    `progress` Nullable(String) COMMENT 进展：大修前分析，大修中分析，大修后跟踪,    `status` Int32 DEFAULT 0 COMMENT 状态：0=分析中，1=校核中，2=已完成 ，3=再分析中，4=再校核中，5=已生效,    `responsible_person` Nullable(String) COMMENT 分析对象负责人,    `responsible_person_name` Nullable(String) COMMENT 分析对象负责人姓名,    `concerns_number` Int32 DEFAULT 0 COMMENT 输出关注数量,    `keyword` Nullable(String) COMMENT 综合查询字段,    `last_round_end_time` Nullable(DateTime) COMMENT 上轮大修结束,    `oh_start_date` Nullable(DateTime) COMMENT 大修开始日期,    `oh_plan_start_date` Nullable(String) COMMENT 大修计划开始日期,    `oh_end_date` Nullable(DateTime) COMMENT 大修结束日期,    `pre_last_flush_time` Nullable(DateTime) COMMENT 大修前的最后刷新时间,    `in_last_flush_time` Nullable(DateTime) COMMENT 大修中的最后刷新时间,    `aft_last_flush_time` Nullable(DateTime) COMMENT 大修后的最后刷新时间,    `tracking_date` Nullable(Int32) COMMENT 大修后跟踪(单位周),    `tmpl_version` Nullable(String) DEFAULT 1.0 COMMENT 模板版本（关联外键：oh_tmpl_info.version）,    `update_user` Nullable(String) COMMENT 修改人用户ID,    `update_user_name` Nullable(String) COMMENT 修改人姓名,    `update_time` DateTime DEFAULT now() COMMENT 修改时间,    `deleted_flag` Int8 DEFAULT 0 COMMENT 逻辑删除字段,    `need_flush` Int8 DEFAULT 1 COMMENT 是否需要刷新：0=表示当前大修报告不再需要维护更新,    `create_time` DateTime DEFAULT now() COMMENT 创建时间"
+    },
+    "字段类型": {
+      "report_code": "String",
+      "report_name": "Nullable(String)",
+      "template_code": "String",
+      "proc_id": "Nullable(String)",
+      "base_code": "Nullable(String)",
+      "set_code": "Nullable(String)",
+      "overhaul_rounds": "Nullable(String)",
+      "progress": "Nullable(String)",
+      "status": "Int32",
+      "responsible_person": "Nullable(String)",
+      "responsible_person_name": "Nullable(String)",
+      "concerns_number": "Int32",
+      "keyword": "Nullable(String)",
+      "last_round_end_time": "Nullable(DateTime)",
+      "oh_start_date": "Nullable(DateTime)",
+      "oh_plan_start_date": "Nullable(String)",
+      "oh_end_date": "Nullable(DateTime)",
+      "pre_last_flush_time": "Nullable(DateTime)",
+      "in_last_flush_time": "Nullable(DateTime)",
+      "aft_last_flush_time": "Nullable(DateTime)",
+      "tracking_date": "Nullable(Int32)",
+      "tmpl_version": "Nullable(String)",
+      "update_user": "Nullable(String)",
+      "update_user_name": "Nullable(String)",
+      "update_time": "DateTime",
+      "deleted_flag": "Int8",
+      "need_flush": "Int8",
+      "create_time": "DateTime"
+    },
+    "样例数据": [
+      "Row 1: report_code: DY1D124000001 | report_name: 验证大亚湾电厂 | template_code: DY00000001 | proc_id:  | base_code: DY | set_code: DY1 | overhaul_rounds: D124 | progress: 大修中分析 | status: 0 | responsible_person: P634981,P633395 | responsible_person_name: 曹国栋,邬家豪 | concerns_number: 0 | keyword: DY1CRF001PO&POZB10DY1CRF001PO&RRGA10|DY1D124000001验证大亚湾电厂DY00000001DY大亚湾分析中P634981,P633395曹国栋,邬家豪 | last_round_end_time: None | oh_start_date: None | oh_plan_start_date: 2024-10-8 10:37 | oh_end_date: None | pre_last_flush_time: 2024-10-28 14:50:14 | in_last_flush_time: None | aft_last_flush_time: None | tracking_date: 3 | tmpl_version: 1.0 | update_user:  | update_user_name:  | update_time: 2024-09-22 19:34:51 | deleted_flag: 0 | need_flush: 1 | create_time: 2024-09-22 19:34:51",
+      "Row 2: report_code: DY1D124000002 | report_name:   | template_code: DY00000005 | proc_id:  | base_code: DY | set_code: DY1 | overhaul_rounds: D124 | progress: 大修中分析 | status: 0 | responsible_person: P636091 | responsible_person_name: 李俞方 | concerns_number: 0 | keyword: DY1CRF001RR&RRGA10DY1CRF002RR&RRGA10|DY1D124000002 DY00000005DY大亚湾分析中P636091李俞方 | last_round_end_time: None | oh_start_date: None | oh_plan_start_date: 2024-10-8 10:37 | oh_end_date: None | pre_last_flush_time: 2024-11-05 19:02:56 | in_last_flush_time: None | aft_last_flush_time: None | tracking_date: 2 | tmpl_version: 0 | update_user:  | update_user_name:  | update_time: 2024-09-23 19:18:31 | deleted_flag: 0 | need_flush: 1 | create_time: 2024-09-23 19:18:31",
+      "Row 3: report_code: DY1D124000003 | report_name:   | template_code: DY00000008 | proc_id:  | base_code: DY | set_code: DY1 | overhaul_rounds: D124 | progress: 大修中分析 | status: 0 | responsible_person: P636091 | responsible_person_name: 李俞方 | concerns_number: 0 | keyword: DY1CRF001RR&RRGA10DY1CRF002RR&RRGA10|DY1D124000003 DY00000008DY大亚湾分析中P636091李俞方 | last_round_end_time: None | oh_start_date: None | oh_plan_start_date: 2024-10-8 10:37 | oh_end_date: None | pre_last_flush_time: 2024-11-05 19:02:58 | in_last_flush_time: None | aft_last_flush_time: None | tracking_date: 1 | tmpl_version: 0 | update_user:  | update_user_name:  | update_time: 2024-09-23 19:18:32 | deleted_flag: 0 | need_flush: 1 | create_time: 2024-09-23 19:18:32",
+      "Row 4: report_code: DY1D124000004 | report_name: ee | template_code: DY00000013 | proc_id: 27d8e2ac1b7d47edb815b8c16e2fea9f | base_code: DY | set_code: DY1 | overhaul_rounds: D124 | progress: 大修中分析 | status: 3 | responsible_person: P633738,P268434 | responsible_person_name: 刘钢霖,杨瑞玲 | concerns_number: 2 | keyword: DY1CRF002PO&POZB10DY1RCV001PO&VAAJ13DY1RCV001RR&POZF13DY1RCV001RR&RRGA13|DY1D124000004eeDY00000013DY大亚湾分析中 | last_round_end_time: None | oh_start_date: None | oh_plan_start_date: 2024-10-8 10:37 | oh_end_date: None | pre_last_flush_time: None | in_last_flush_time: None | aft_last_flush_time: None | tracking_date: 1 | tmpl_version: 1.0 | update_user: P640777 | update_user_name: [P640777]郭进 | update_time: 2024-10-28 10:56:48 | deleted_flag: 0 | need_flush: 1 | create_time: 2024-10-16 16:59:55",
+      "Row 5: report_code: DY1D126000001 | report_name:  | template_code: DY00000001 | proc_id: 4fc6b2e9f4944dcfa237937780584baa | base_code: DY | set_code: DY1 | overhaul_rounds: D126 | progress: 大修中分析 | status: 1 | responsible_person: P634981,P633395 | responsible_person_name: 曹国栋,邬家豪 | concerns_number: 0 | keyword: DY1CRF001PO&POZB10DY1CRF001PO&RRGA10|DY1D126000001DY00000001DY大亚湾分析中P634981,P633395曹国栋,邬家豪 | last_round_end_time: None | oh_start_date: None | oh_plan_start_date: 2024-07-18 03:30 | oh_end_date: None | pre_last_flush_time: 2024-11-07 09:41:38 | in_last_flush_time: None | aft_last_flush_time: None | tracking_date: 1 | tmpl_version: 1.0 | update_user: P634193 | update_user_name: [P634193]邓升娟 | update_time: 2025-06-10 13:54:52 | deleted_flag: 0 | need_flush: 1 | create_time: 2024-06-20 11:41:05"
+    ]
+  }
+]
+
+【系统字典结构】
+[业务术语与数据库编码映射规则]
+- 基地编码（base_code）对应关系：大亚湾 -> 'DY'，宁德 -> 'ND'，阳江 -> 'YJ'，红沿河 -> 'HY'，台山 -> 'TS'，防城港 -> 'FC'
+- 机组编码 (set_code)格式为: 基地编码 + 机组号,例如：大亚湾1号机('DY1')，岭澳1号机('LA1')
+- 状态(status)：0-分析中 1-校核中 2-已完成 3-再分析中 4-再校核中 5-已生效
+- 大修`进展`(progress)：大修前分析，大修中分析，大修后跟踪
+- 大修轮次(overhaul_rounds)格式为：基地编码首字母+次数,示例：宁德1号机大修轮次105：'N105(overhaul_rounds: "'N105")
+
+请分析：
+1. 哪些表与用户问题相关
+2. 表之间的关联关系
+3. 字段名称、数据类型和含义
+4. 可能需要用到的约束条件
+
+### 第3步：参考相关案例（如提供）
+【相关案例】
+用户问题: 1. 大亚湾基地状态为“分析中”的大修报告有哪些？
+2. 大亚湾基地“分析中”的大修报告有哪些？
+查询条件: 查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: "DY"）
+状态：分析中（status: "0"）
+SQL语句: SELECT *
+FROM oh_report_info
+WHERE base_code = 'DY' 
+AND status = '0'
+AND deleted_flag = '0'
+备注: 状态：
+0=分析中或编写中，1=校核中，2=已完成 ，3=再分析中，4=再校核中，5=已生效
+
+---
+
+用户问题: 1. 大亚湾基地进展为“大修后跟踪”的大修报告有哪些？
+2. 大亚湾基地“大修后跟踪”的大修报告有哪些？
+查询条件: 查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: "DY"）
+进展：大修后跟踪
+SQL语句: SELECT *
+FROM oh_report_info
+WHERE base_code = 'DY' 
+AND progress = '大修后跟踪'
+AND deleted_flag = '0'
+备注: 进展：大修前分析，大修中分析，大修后跟踪
+
+---
+
+用户问题: 1. 大亚湾1号机2024年开始大修的大修报告有哪些？
+2. 大亚湾1号机大修开始时间在2024年的大修报告有哪些？
+查询条件: 查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: "DY"）
+机组：1号机（set_code: "DY1"）
+大修开始日期：2024年  (oh_start_date: ["2024-01-01 00:00:00", "2024-12-31 23:59:59"])
+SQL语句: SELECT *  
+FROM oh_report_info  
+WHERE set_code = 'DY1'  
+AND oh_start_date BETWEEN '2024-01-01' AND '2024-12-31'
+AND deleted_flag = '0'
+备注:
+
+---
+
+用户问题: 在大亚湾基地结束大修的大修报告有哪些？
+查询条件: 查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: "DY"）
+大修结束日期：
+SQL语句: SELECT *
+FROM oh_report_info
+WHERE 
+    base_code = 'DY' 
+    AND oh_end_date IS NOT NULL 
+    AND deleted_flag = '0'
+备注:
+
+---
+
+用户问题: 1. 大亚湾1号机2024年新增的大修报告有哪些？
+2. 大亚湾1号机创建时间在2024年的大修报告有哪些？
+查询条件: 查询表：大修报告主表（oh_report_info ）
+基地编码：大亚湾（base_code: "DY"）
+机组：1号机（set_code: "DY1"）
+报告创建日期：2024年  (oh_start_date: ["2024-01-01 00:00:00", "2024-12-31 23:59:59"])
+SQL语句: SELECT *  
+FROM oh_report_info  
+WHERE set_code = 'DY1'  
+AND create_time BETWEEN '2024-01-01' AND '2024-12-31'
+AND deleted_flag = '0'
+备注:
+
+
+请参考：
+1. 类似问题的解决方案
+2. 常见的查询模式
+3. 需要注意的特殊情况
+
+### 第4步：构建SQL逻辑
+基于以上分析只使用一个表（从上述表中选择一个最相关的表）构建SQL语句：
+```sql
+SELECT ... FROM ... WHERE ...;
+```
+1. 确定查询的SELECT字段
+2. 确定FROM表和JOIN关系
+3. 确定WHERE条件
+4. 确定GROUP BY、HAVING、ORDER BY等子句
+5. 考虑是否需要子查询或窗口函数
+6. 使用适当的ClickHouse函数和语法(ClickHouse 不支持使用中文作为列别名（AS 后面的名称），除非你用反引号（`）或双引号（"）将它们括起来,例如：SELECT status AS `报告状态`)
+
+### 第5步：丰富SELECT字段
+在不会改变查询结果的前提下，尽可能多选择一些维度的数据。特别是，如果表有主键，请尽量包含主键，除非以下情况：
+1. 在聚合查询（如使用GROUP BY）中，如果添加主键会导致分组变化，从而改变聚合结果，则不要添加主键。
+2. 如果用户明确指定了只需要某些字段，则按用户要求。
+3. 保持结果不变：添加字段不能改变原有查询的结果行数、聚合值、排序等。例如，在非聚合查询中，添加主键是安全的；在聚合查询中，可以添加那些在GROUP BY子句中已经包含的字段，或者使用聚合函数包裹的字段。
+
+例如:大亚湾1号机2024年10月份开始大修的大修报告有哪些？原来的SQL:
+
+```sql
+SELECT report_code 
+FROM oh_report_info 
+WHERE base_code = 'DY'
+AND set_code = 'DY1'
+AND oh_start_date BETWEEN '2024-10-01 00:00:00' AND '2024-10-31 23:59:59';
+ ```
+
+丰富后的SQL:
+```sql
+SELECT *
+FROM oh_report_info
+WHERE base_code = 'DY'
+AND set_code = 'DY1'
+AND oh_start_date BETWEEN '2024-10-01 00:00:00' AND '2024-10-31 23:59:59';
+```
+### 第6步：验证和优化
+严格评估sql:
+1. 回顾生成的SQL，检查它是否完全符合用户的原始问题和所有逻辑约束。
+2. 是否使用了不存在的表名
+3. GROUP BY子句是否包含了所有非聚合的SELECT字段？
+4. 当问题中包含以下关键词时，必须使用DISTINCT或GROUP BY去重："哪些"、"哪几种"、"哪些类型"、"什么种类""列出所有不同的"、"所有不重复的" "种类"、"类型"、"分类"、“模板数量”
+以及其他明确要求唯一值的场景
+5. 重点进行字段存在性检查：严格确认SQL中使用的所有字段是否在对应的表结构中存在
+6. 确认查询使用的表格是否含有deleted_flag字段，`deleted_flag`代表此条记录是否逻辑删除,如果有deleted_flag字段的表格生成SQL的时候需要加上AND deleted_flag = '0' 作为的过滤条件。(注意deleted_flag = 0 会报错，正确的是deleted_flag = '0')
+7. 严格对生成sql所用的表结构信息进行字段检查,没有`deleted_flag`字段的表格生成SQL的时候不要加deleted_flag。
+
+### 第6步：修正SQL
+1. 如果在评估中发现任何问题,根据错误原因修改sql
+2. 如果在评估中发现任何问题,对sql语句进行修改并重新进行第6步：验证和优化。重新评估sql语句
+
+
+## 最终输出格式
+请输出自我检验与修正后的SQL候选项，严格遵循以下格式请将最终的SQL语句放在```sql ... ```代码块中。，不要有任何额外解释：
+
+```sql
+SELECT ... FROM ... WHERE ...;
+```
+
