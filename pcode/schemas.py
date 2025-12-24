@@ -1,33 +1,45 @@
 from pydantic import BaseModel
 from typing import Optional, List, Any, Dict, Union
 
-# 1. 图表数据结构 (对应 ECharts/Chart.js 结构)
-class ChartDataset(BaseModel):
+# =============== 饼图专用数据项 ===============
+class PieDatasetItem(BaseModel):
+    value: Union[int, float]
+    name: str
+
+# =============== 柱状图/折线图专用数据集 ===============
+class BarLineDataset(BaseModel):
     label: str
     data: List[Union[int, float]]
 
-class ChartDataDetail(BaseModel):
+# =============== 图表数据详情（联合类型） ===============
+class ChartDataDetailBarLine(BaseModel):
     labels: List[str]
-    datasets: List[ChartDataset]
+    datasets: List[BarLineDataset]
 
+class ChartDataDetailPie(BaseModel):
+    # 饼图通常不需要 labels 字段，直接 datasets 包含 name/value
+    datasets: List[PieDatasetItem]
+
+# =============== 顶层 ChartData：通过 type 区分结构 ===============
 class ChartData(BaseModel):
-    type: str  # bar, line, pie, scatter
+    type: str  # "bar", "line", "pie"
     title: str
-    data: ChartDataDetail
+    data: Union[ChartDataDetailBarLine, ChartDataDetailPie]
 
-# 2. 核心结果结构 (包含图表 + Markdown报告)
+    # 可选：添加 validator 确保结构匹配 type（进阶）
+    # 但为简化，此处依赖逻辑层正确构造
+
+# =============== 分析结果 ===============
 class AnalysisResult(BaseModel):
-    chartData: Optional[ChartData] = None  # 如果不需要图表，允许为 null
+    chartData: Optional[ChartData] = None
     markdownReport: str
 
-
-# ====== 请求/响应模型 ======
+# =============== 请求/响应 ===============
 class QueryRequest(BaseModel):
     question: str
 
-# 3. 顶层 API 响应结构
 class QueryResponse(BaseModel):
-    status: str  # success / error
+    status: str
     sql: str
     result: Optional[AnalysisResult] = None
-    message: str = ""
+    message: str

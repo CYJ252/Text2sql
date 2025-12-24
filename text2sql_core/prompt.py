@@ -196,10 +196,10 @@ PROMPTS["Finall_stream"] = '''
 
 **第一部分：图表配置数据 (JSON)**
 如果数据适合可视化，请输出一个 JSON 对象（不要用 markdown 代码块包裹，直接输出 JSON 字符串）。
-JSON 结构如下：
+柱状图（直方图）、折线图 JSON 结构如下：
 {
   "chartData": {
-    "type": "图表类型 (bar/line/pie/scatter)",
+    "type": "图表类型 (bar/line)",
     "title": "图表标题",
     "data": {
       "labels": ["X轴标签1", "X轴标签2"...],
@@ -212,6 +212,24 @@ JSON 结构如下：
     }
   }
 }
+
+饼图 JSON 结构如下：
+{
+  "chartData": {
+    "type": "pie",
+    "title": "图表标题",
+    "data": {
+      "labels": ["X轴标签1", "X轴标签2"...],
+      "datasets": [
+        { value : 数值1, name: "数据列名1" },
+        { value : 数值2, name: "数据列名2" },
+        ...
+      ]
+    }
+  }
+}
+
+
 *注意：如果不需要图表，第一部分请输出 {"chartData": null}*
 
 **第二部分：分隔符**
@@ -281,6 +299,38 @@ PROMPTS["Finall"] = '''
    - 如果执行结果为空，`status` 为 "success"，`result` 为 null，`message` 说明“未找到相关数据”。
 4. 确保返回的是合法的 JSON 字符串，可以直接被解析。
 
+柱状图（直方图）、折线图 JSON 结构如下：
+{
+  "chartData": {
+    "type": "图表类型 (bar/line)",
+    "title": "图表标题",
+    "data": {
+      "labels": ["X轴标签1", "X轴标签2"...],
+      "datasets": [
+        {
+          "label": "数据列名",
+          "data": [数值1, 数值2...]
+        }
+      ]
+    }
+  }
+}
+
+饼图 JSON 结构如下：
+{
+  "chartData": {
+    "type": "pie",
+    "title": "图表标题",
+    "data": {
+      "labels": ["X轴标签1", "X轴标签2"...],
+      "datasets": [
+        { value : 数值1, name: "数据列名1" },
+        { value : 数值2, name: "数据列名2" },
+        ...
+      ]
+    }
+  }
+}
 
 ### 输出要求 ###
 请直接输出一个标准的 JSON 对象，不要包含 markdown 代码块标记（如 ```json ... ```），JSON 结构如下：
@@ -288,19 +338,7 @@ PROMPTS["Finall"] = '''
   "status": "success 或 error",
   "sql": "执行的 SQL 语句",
   "result": {
-    "chartData": {
-      "type": "图表类型 (bar/line/pie/scatter)",
-      "title": "图表标题",
-      "data": {
-        "labels": ["X轴标签1", "X轴标签2"...],
-        "datasets": [
-          {
-            "label": "数据列名",
-            "data": [数值1, 数值2...]
-          }
-        ]
-      }
-    },
+    "chartData": { ...图表配置... },
     "markdownReport": "## 分析结论\n\n...这里写分析文字...\n\n| 表头1 | 表头2 |\n|---|---|\n| 内容 | 内容 |\n\n"
   },
   "message": "简要说明数据分析结果（例如：'成功获取到 xx 条数据' 或 '未查询到相关数据'）"
@@ -311,7 +349,7 @@ PROMPTS["Finall"] = '''
 **场景 A：有数据时**
 {
   "status": "success",
-  "sql": "...",
+  "sql": "执行的 SQL 语句",
   "result": {
     "chartData": { ...图表配置... },
     "markdownReport": "## 分析结论\n\n...基于数据的分析...\n\n| markdown表格 |"
@@ -322,7 +360,7 @@ PROMPTS["Finall"] = '''
 **场景 B：无数据时 (严禁编造)**
 {
   "status": "success",
-  "sql": "...",
+  "sql": "执行的 SQL 语句",
   "result": null,
   "message": "未查询到相关数据"
 }
@@ -363,6 +401,39 @@ PROMPTS["Finall_2"] = '''
    - 如果只是单一数值或文本列表，`chartData` 设为 null。
 5. **报告生成**：编写 `markdownReport`，包含 Markdown 格式的数据表格和自然语言分析结论。
 
+柱状图（直方图）、折线图 JSON 结构如下：
+{
+  "chartData": {
+    "type": "图表类型 (bar/line)",
+    "title": "图表标题",
+    "data": {
+      "labels": ["X轴标签1", "X轴标签2"...],
+      "datasets": [
+        {
+          "label": "数据列名",
+          "data": [数值1, 数值2...]
+        }
+      ]
+    }
+  }
+}
+
+饼图 JSON 结构如下：
+{
+  "chartData": {
+    "type": "pie",
+    "title": "图表标题",
+    "data": {
+      "labels": ["X轴标签1", "X轴标签2"...],
+      "datasets": [
+        { value : 数值1, name: "数据列名1" },
+        { value : 数值2, name: "数据列名2" },
+        ...
+      ]
+    }
+  }
+}
+
 ### 输出要求 ###
 请直接输出一个标准的 JSON 对象，不要包含 markdown 代码块标记（如 ```json ... ```），JSON 结构如下：
 
@@ -370,19 +441,7 @@ PROMPTS["Finall_2"] = '''
   "status": "success 或 error",
   "sql": "被选中的最优 SQL 语句",
   "result": {
-    "chartData": {
-      "type": "图表类型 (bar/line/pie/scatter)",
-      "title": "图表标题",
-      "data": {
-        "labels": ["X轴标签1", "X轴标签2"...],
-        "datasets": [
-          {
-            "label": "数据列名",
-            "data": [数值1, 数值2...]
-          }
-        ]
-      }
-    },
+    "chartData": { ...图表配置... },
     "markdownReport": "## 分析结论\n\n...这里写分析文字...\n\n| 表头1 | 表头2 |\n|---|---|\n| 内容 | 内容 |\n\n*数据来源表名：...*"
   },
   "message": "简要说明选择了哪个 SQL 及其原因，或者错误原因"

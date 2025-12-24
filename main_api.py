@@ -100,6 +100,8 @@ async def text_to_sql_query(request: QueryRequest):
         # 1. 表名检索
         table_names = rag_system.hybrid_search(user_question, top_k=15, output_table_name=True)
         all_tables_info = extract_some_tables_info(ck_client, table_names, sample_num=5)
+        rag_time = time.time()
+        print(f"RAG检索生成时间: {rag_time - start_time:.2f} 秒")
 
         # 2. 案例检索
         case_docs = icl_system.vector_search(user_question, top_k=5)

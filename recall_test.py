@@ -43,7 +43,7 @@ def main():
         knowledge_base_dir=KNOWLEDGE_BASE_DIR,
         vllm_host=EMBEDDING_HOST,
         dict_path="my_knowledge_base/dict.txt",
-        force_rebuild=False
+        force_rebuild=True
     )# 如果文件有修改需要强制重建知识库将force_rebuild设为True，或使用下面的函数
     # rag_system.setup_knowledge_base(force_rebuild=True) 
 
@@ -65,7 +65,7 @@ def main():
         if not user_question.strip():
             continue
         # 表名检索，可以使用向量检索、关键词检索和混合检索
-        results = rag_system.hybrid_search(user_question, top_k=15,output_table_name=True)
+        results = rag_system.hybrid_search(user_question, top_k=20,output_table_name=True)
         print("检索到的表名和相关内容如下：")
         for index , table_name in enumerate(results):
             print(f"表{index}: {table_name}")
