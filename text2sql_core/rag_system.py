@@ -1,51 +1,40 @@
+from typing import Optional
 from openai import OpenAI
 import pickle
-import requests
 import os
-import time
-import datetime
 import re
 import jieba
+import uuid  # 新增：用于生成唯一ID
 from collections import defaultdict
 from langchain_community.document_loaders import (
-    TextLoader,
-    PyPDFLoader,
-    Docx2txtLoader,
-    UnstructuredMarkdownLoader,
-    UnstructuredExcelLoader,
-    CSVLoader
+    TextLoader, PyPDFLoader, Docx2txtLoader, 
+    UnstructuredMarkdownLoader, UnstructuredExcelLoader, CSVLoader
 )
-from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from rank_bm25 import BM25Okapi
 
+from text2sql_core.table_info_extraction import load_table_meta_as_docs
+
+# from pcode.sqlgen import extract_all_tables_info
 
 class SimpleVLLMEmbeddings:
     def __init__(self, model, base_url, api_key='Empty'):
         self.model = model
-        self.client = OpenAI(
-            base_url=base_url,
-            api_key=api_key,
-        )
+        self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def embed_documents(self, texts):
-        if not texts:
-            return []
+        if not texts: return []
+        # 注意：实际生产中建议分批次调用embedding接口，避免一次性请求过大
         embeddings = []
         for text in texts:
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=text,
-            )
+            response = self.client.embeddings.create(model=self.model, input=text)
             embeddings.append(response.data[0].embedding)
         return embeddings
 
     def embed_query(self, text):
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=text,
-        )
+        response = self.client.embeddings.create(model=self.model, input=text)
         return response.data[0].embedding
 
     def __call__(self, text):
@@ -53,28 +42,23 @@ class SimpleVLLMEmbeddings:
 
 
 class RAGSystem:
-    def __init__(self, embedding_model, knowledge_base_dir, vllm_host ,dict_path="Emoty",force_rebuild=True):
+    def __init__(self, embedding_model, knowledge_base_dir, vllm_host, dict_path="Empty"):
         self.knowledge_base_dir = knowledge_base_dir
         self.embeddings = SimpleVLLMEmbeddings(model=embedding_model, base_url=vllm_host)
         self.dict_path = dict_path
-        self.force_rebuild = force_rebuild
         
-        # 向量存储
-        self.vector_store = None
-        self.documents = []
-        self.bm25_index = None
-
-        # 全文检索的倒排索引
-        self.inverted_index = defaultdict(list)
+        # 核心数据结构
+        self.documents = []        # 统一的文档列表（包含metadata和id）
+        self.doc_map = {}          # id -> Document 的映射，方便快速查找
+        self.vector_store = None   # FAISS 索引
+        self.bm25_index = None     # BM25 索引
         
-        # 文本分割器（建议使用RecursiveCharacterTextSplitter，更稳健）
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=4000,
             chunk_overlap=100,
             keep_separator=True
         )
 
-        # 加载自定义词典（如果有）
         if os.path.exists(self.dict_path):
             jieba.load_userdict(self.dict_path)
         
@@ -87,34 +71,43 @@ class RAGSystem:
             ".xls": UnstructuredExcelLoader, 
             ".csv": lambda path: CSVLoader(path, encoding='gbk'), 
         }
-        self.setup_knowledge_base(force_rebuild=self.force_rebuild)
 
-    def setup_knowledge_base(self, force_rebuild=False):
-        """初始化或加载知识库"""
+    def _load_indexes_from_paths(self, faiss_path: str, data_path: str) -> bool:
+        """
+        从指定路径加载 FAISS 向量库和文档/BM25 数据。
+        成功返回 True，失败返回 False。
+        """
+        if not (os.path.exists(faiss_path) and os.path.exists(data_path)):
+            return False
+
+        try:
+            # 1. 加载向量库
+            self.vector_store = FAISS.load_local(
+                faiss_path, self.embeddings, allow_dangerous_deserialization=True
+            )
+            # 2. 加载文档和 BM25
+            with open(data_path, 'rb') as f:
+                data = pickle.load(f)
+                self.documents = data['documents']
+                self.bm25_index = data['bm25_index']
+            # 3. 重建 ID 映射
+            self.doc_map = {doc.metadata['chunk_id']: doc for doc in self.documents}
+            return True
+        except Exception as e:
+            print(f"⚠️ 索引加载失败: {e}")
+            return False
+
+    def init_kb_from_files(self, file_paths, force_rebuild: bool=False) -> bool:
+        """从文件初始化知识库。"""
         os.makedirs(self.knowledge_base_dir, exist_ok=True)
         faiss_path = os.path.join(self.knowledge_base_dir, "faiss_index")
-        bm25_path = os.path.join(self.knowledge_base_dir, "bm25_data.pkl")
-
-        if not force_rebuild and os.path.exists(faiss_path) and os.path.exists(bm25_path):
-            print("加载现有索引...")
-            try:
-                self.vector_store = FAISS.load_local(
-                    faiss_path, self.embeddings, allow_dangerous_deserialization=True
-                )
-                with open(bm25_path, 'rb') as f:
-                    data = pickle.load(f)
-                    self.documents = data['documents']
-                    self.bm25_index = data['bm25_index']
-                return True
-            except Exception as e:
-                print(f"加载失败: {e}，尝试重建...")
-
-        return self._build_indexes(faiss_path, bm25_path)
-
-    def _build_indexes(self, faiss_path, bm25_path):
-        print("构建新索引...")
+        data_path = os.path.join(self.knowledge_base_dir, "rag_data.pkl") # 统一存储文档和BM25
+        if not force_rebuild and self._load_indexes_from_paths(faiss_path, data_path):
+            print("✅ 知识库加载成功！")
+            return True
         all_docs = []
-        for root, _, files in os.walk(self.knowledge_base_dir):
+        # 1. 加载文件
+        for root, _, files in os.walk(file_paths):
             for file_name in files:
                 ext = os.path.splitext(file_name)[-1].lower()
                 if ext in self.loader_mapping:
@@ -125,117 +118,143 @@ class RAGSystem:
                         print(f"加载 {file_name} 失败: {e}")
 
         if not all_docs:
+            print(f"没有找到可加载的文件。")
+            return False
+        return self._build_indexes(all_docs, faiss_path, data_path)
+
+    def init_kb_from_clickhouse(self, ck_client, force_rebuild: bool = False) -> bool:
+        """从 ClickHouse 数据库初始化知识库。"""
+        os.makedirs(self.knowledge_base_dir, exist_ok=True)
+        faiss_path = os.path.join(self.knowledge_base_dir, "faiss_index")
+        data_path = os.path.join(self.knowledge_base_dir, "rag_data.pkl")
+
+        if not force_rebuild and self._load_indexes_from_paths(faiss_path, data_path):
+            print("✅ 知识库加载成功！")
+            return True
+        table_info=load_table_meta_as_docs(ck_client)
+        if not table_info:
+            print("没有从 ClickHouse 中提取到表信息。")
+            return False
+        return self._build_indexes(table_info, faiss_path, data_path)
+
+    def _build_indexes(self, documents, faiss_path, data_path):
+        print("正在构建统一索引...")
+
+        if not documents:
             return False
 
-        self.documents = self.text_splitter.split_documents(all_docs)
+        print(f"原始文档数: {len(documents)}，正在分块...")
+        self.documents = self.text_splitter.split_documents(documents)
 
-        # FAISS
-        self.vector_store = FAISS.from_documents(self.documents, self.embeddings)
+        # 3. 分配 chunk_id
+        for doc in self.documents:
+            doc.metadata['chunk_id'] = str(uuid.uuid4())
+
+        self.doc_map = {
+            doc.metadata['chunk_id']: doc for doc in self.documents
+        }
+
+        print("构建 FAISS 向量库...")
+        self.vector_store = FAISS.from_documents(
+            self.documents, self.embeddings
+        )
         self.vector_store.save_local(faiss_path)
 
-        # BM25
-        tokenized_corpus = [jieba.lcut(doc.page_content) for doc in self.documents]
+        print("构建 BM25 索引...")
+        tokenized_corpus = [
+            jieba.lcut(doc.page_content) for doc in self.documents
+        ]
         self.bm25_index = BM25Okapi(tokenized_corpus)
-        with open(bm25_path, 'wb') as f:
-            pickle.dump({'documents': self.documents, 'bm25_index': self.bm25_index}, f)
 
+        with open(data_path, 'wb') as f:
+            pickle.dump({
+                'documents': self.documents,
+                'bm25_index': self.bm25_index
+            }, f)
+
+        print("索引构建完成。")
         return True
 
-    def vector_search(self, query, top_k=5,output_table_name=False):
-        """
-        执行向量检索
-        """
-        if not self.vector_store:
-            print("错误：知识库尚未设置。请先运行 setup_knowledge_base()。")
-            return []
+    def vector_search(self, query, top_k=5, output_table_name=False):
+        if not self.vector_store: return []
         
-        # print("执行向量检索...")
         tokenized_query = jieba.lcut(query)
         combined = f"原始查询: {query}\n分词结果: {tokenized_query}"
+        
         results = self.vector_store.similarity_search(combined, k=top_k)
+        
         if output_table_name:
-            table_names = search_table_name(results)
-            return table_names
+            return search_table_name(results)
         return results
 
-    def keyword_search(self, query, top_k=5,output_table_name=False):
-        """
-        执行全文检索
-        """
-        if not self.bm25_index:
-            print("错误：知识库尚未设置。请先运行 setup_knowledge_base()。")
-            return []
+    def keyword_search(self, query, top_k=5, output_table_name=False):
+        if not self.bm25_index: return []
         
-        # print("执行全文检索...")
-        # 2. BM25检索
         tokenized_query = jieba.lcut(query)
+        # 获取 BM25 分数
         bm25_scores = self.bm25_index.get_scores(tokenized_query)
-        bm25_top_indices = sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)[:top_k]
-        bm25_results = [self.documents[i] for i in bm25_top_indices]
+        
+        # 排序获取前 top_k 个索引
+        top_indices = sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)[:top_k]
+        
+        # 直接通过索引从 self.documents 获取对应的文档
+        # 因为我们构建时保证了顺序一致，所以 index 0 的分数对应 self.documents[0]
+        results = [self.documents[i] for i in top_indices]
+        
         if output_table_name:
-            table_names = search_table_name(bm25_results)
-            return table_names
-        return bm25_results
+            return search_table_name(results)
+        return results
 
-
-    def hybrid_search(self, question, top_k=8, rrf_k=60,output_table_name=False):
+    def hybrid_search(self, question, top_k=8, rrf_k=60, output_table_name=False):
         """
-        执行混合检索并使用RRF进行结果融合
+        基于 chunk_id 的精确混合检索 (RRF)
         """
-        if not self.vector_store:
-            print("错误：知识库尚未设置。请先运行 setup_knowledge_base()。")
+        if not self.vector_store or not self.bm25_index:
+            print("错误：索引未就绪")
             return []
         
-        # 执行向量检索...
-        vector_results = self.vector_search(question, top_k=top_k*2)
+        # 扩大检索范围以获得更好的交集
+        search_k = top_k * 2
         
-        # 执行全文检索...
-        keyword_results = self.keyword_search(question, top_k=top_k*2)
+        # 1. 向量检索
+        # 注意：此处返回的是 Document 对象列表
+        vector_docs = self.vector_search(question, top_k=search_k)
+        
+        # 2. 关键词检索
+        keyword_docs = self.keyword_search(question, top_k=search_k)
 
-        # RRF 融合
-        print("正在进行RRF融合...")
-        ranked_scores = defaultdict(float)
+        # 3. RRF 融合计算
+        # 使用 chunk_id 作为唯一键值，而不是 page_content
+        rrf_score_map = defaultdict(float)
         
-        # 处理向量检索结果
-        for i, doc in enumerate(vector_results):
-            # 使用 page_content 作为唯一标识符
-            doc_content = doc.page_content
-            rank = i + 1
-            ranked_scores[doc_content] += 1.0 / (rrf_k + rank)
+        # 处理向量结果
+        for rank, doc in enumerate(vector_docs):
+            doc_id = doc.metadata.get('chunk_id')
+            if doc_id:
+                rrf_score_map[doc_id] += 1.0 / (rrf_k + rank + 1)
             
-        # 处理全文检索结果
-        for i, doc in enumerate(keyword_results):
-            doc_content = doc.page_content
-            rank = i + 1
-            # 如果文档已存在，则累加分数；否则，创建新条目
-            ranked_scores[doc_content] += 1.0 / (rrf_k + rank)
+        # 处理关键词结果
+        for rank, doc in enumerate(keyword_docs):
+            doc_id = doc.metadata.get('chunk_id')
+            if doc_id:
+                rrf_score_map[doc_id] += 1.0 / (rrf_k + rank + 1)
 
-        # 按RRF分数排序
-        sorted_docs_content = sorted(ranked_scores.keys(), key=lambda x: ranked_scores[x], reverse=True)
+        # 4. 排序并取回文档
+        # 按 RRF 分数倒序
+        sorted_ids = sorted(rrf_score_map.keys(), key=lambda x: rrf_score_map[x], reverse=True)
         
-        # 去重并保持顺序
         final_docs = []
-        seen_content = set()
-        all_retrieved_docs = vector_results + keyword_results
-        
-        for content in sorted_docs_content:
-            if len(final_docs) >= top_k:
-                break
-            if content not in seen_content:
-                seen_content.add(content)
-                # 找到原始的Document对象（为了保留metadata）
-                for doc in all_retrieved_docs:
-                    if doc.page_content == content:
-                        final_docs.append(doc)
-                        break
+        for doc_id in sorted_ids[:top_k]:
+            # 从之前建立的 doc_map 中取回原始文档对象，确保 metadata 完整
+            if doc_id in self.doc_map:
+                final_docs.append(self.doc_map[doc_id])
+
         if output_table_name:
-            table_names = search_table_name(final_docs)
-            return table_names  
+            return search_table_name(final_docs)
         return final_docs
-    
+
+# 辅助函数保持不变
 def search_table_name(docs):
-    # 检索相关文档
-    # print(f"检索到的文档数: \n{len(docs)}"):
     table_names = [extract_table_name(doc) for doc in docs]
     return [name for name in table_names if name is not None]
 
@@ -243,9 +262,7 @@ def extract_table_name(doc):
     match = re.search(r'英文表名:\s*(\S+)', doc.page_content)
     return match.group(1) if match else None
 
-
 def extract_doc_page_content(retrieval_results):
-    """步骤1: Schema Linking (识别相关表)"""
     if not retrieval_results:
         context_str = "无相关信息"
     else:

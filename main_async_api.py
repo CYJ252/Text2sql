@@ -48,7 +48,7 @@ from pcode.schemas import QueryRequest, QueryResponse
 async def startup_event():
     global openai_client, ck_client, rag_system, icl_system, query_system
     try:
-        # 初始化 OpenAI 客户端
+       # 初始化 OpenAI 客户端
         openai_client = OpenAI(base_url=VLLM_HOST, api_key="EMPTY")
         
         # 初始化 ClickHouse 客户端
@@ -60,23 +60,28 @@ async def startup_event():
             database=Config.CK_DATABASE
         )
 
-        # 初始化 RAG 系统
         rag_system = RAGSystem(
             embedding_model=EMBEDDING_MODEL,
             knowledge_base_dir=KNOWLEDGE_BASE_DIR,
             vllm_host=EMBEDDING_HOST,
             dict_path="my_knowledge_base/dict.txt",
-            force_rebuild=False
         )
+        # 初始化表名检索知识库
+        rag_system.init_kb_from_clickhouse(ck_client, force_rebuild=False) 
+        # rag_system.init_kb_from_files(file_paths=KNOWLEDGE_BASE_DIR,force_rebuild=True)
 
-        icl_system = RAGSystem(
+        ICL_system = RAGSystem(
             embedding_model=EMBEDDING_MODEL,
-            knowledge_base_dir=KNOWLEDGE_BASE_EXAMPLE_LIBRARY_DIR,
+            knowledge_base_dir=KNOWLEDGE_BASE_EXAMPLE_LIBRARY_DIR, #检索文件夹存放地址，文件最好用csv格式
             vllm_host=EMBEDDING_HOST,
             dict_path="my_knowledge_base/dict.txt",
-            force_rebuild=False
         )
+        # 初始化案例检索知识库
+        ICL_system.init_kb_from_files(file_paths=KNOWLEDGE_BASE_EXAMPLE_LIBRARY_DIR,force_rebuild=True)
 
+
+
+        # 初始化查询系统
         query_system = QuerySystem(
             llm_model=LLM_MODEL,
             vllm_host=VLLM_HOST,

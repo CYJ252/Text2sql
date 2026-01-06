@@ -43,19 +43,20 @@ def main():
         knowledge_base_dir=KNOWLEDGE_BASE_DIR,
         vllm_host=EMBEDDING_HOST,
         dict_path="my_knowledge_base/dict.txt",
-        force_rebuild=False
-    )# 如果文件有修改需要强制重建知识库将force_rebuild设为True，或使用下面的函数
-    # rag_system.setup_knowledge_base(force_rebuild=True) 
-
+    )
+    # 初始化表名检索知识库
+    rag_system.init_kb_from_clickhouse(ck_client, force_rebuild=False) 
+    # rag_system.init_kb_from_files(file_paths=KNOWLEDGE_BASE_DIR,force_rebuild=True)
 
     ICL_system = RAGSystem(
         embedding_model=EMBEDDING_MODEL,
         knowledge_base_dir=KNOWLEDGE_BASE_EXAMPLE_LIBRARY_DIR, #检索文件夹存放地址，文件最好用csv格式
         vllm_host=EMBEDDING_HOST,
         dict_path="my_knowledge_base/dict.txt",
-        force_rebuild=True
-    )# 如果文件有修改需要强制重建知识库将force_rebuild设为True，或使用下面的函数
-    # ICL_system.setup_knowledge_base(force_rebuild=True)
+    )
+    # 初始化案例检索知识库
+    ICL_system.init_kb_from_files(file_paths=KNOWLEDGE_BASE_EXAMPLE_LIBRARY_DIR,force_rebuild=True)
+
 
 
     # 初始化查询系统
@@ -75,7 +76,7 @@ def main():
         results = rag_system.hybrid_search(user_question, top_k=10,output_table_name=True)
         all_tables_info = extract_some_tables_info(ck_client, results, sample_num=5)
         # 案例检索，可以使用向量检索、关键词检索和混合检索
-        case_query = ICL_system.vector_search(user_question, top_k=5)
+        case_query = ICL_system.hybrid_search(user_question, top_k=10)
         case_info = extract_doc_page_content(case_query)
 
         sql, reuslt=query_system.query_ck(user_question, all_tables_info,case_info,ck_client=ck_client)

@@ -157,6 +157,16 @@ ND哪些DER超期未完成？,"业务对象：DER
 时间段：无（不限制）
 指标关键词：哪些（查询通知单号）",,
 去年大亚湾汽轮机厂房相关的维修工单有哪些？,,,
+2025年宁德新增了多少个维修通知单？,"基地：宁德 ND   
+时间：2025年
+表：SAP维修模块数据（sap.ads_sap_repair_data）","SELECT 
+    notice_code AS repair_order_number,
+    toDate(create_date) AS create_date
+FROM 
+    sap.ads_sap_repair_data
+WHERE 
+    base = 'ND'
+    AND toDate(create_date) BETWEEN toDate('2025-01-01') AND toDate('2025-12-31')",
 大亚湾1号机有哪些【xx】类描述NG单？,"机组：大亚湾一号机 DY1   功能位置(func_pos)=""DY-1%""
 通知单类型（notice_type）：SAP纠正性维修（NG）
 通知单描述（notice_desc）：""%【xx】%""

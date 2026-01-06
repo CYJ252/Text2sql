@@ -115,7 +115,7 @@ def extract_all_tables_info(ck_client):
     """
     批量提取所有表信息。
     """
-    query = "SELECT * FROM default.table_meta"
+    query = "SELECT * FROM sap.table_meta"
     result = ck_client.query(query)
     columns = result.column_names
     rows = result.result_rows
@@ -161,26 +161,34 @@ def extract_some_tables_info(ck_client, selected_tables, sample_num = 3):
         "id": "序号",
         "table_name_en": "英文表名",
         "table_name_cn": "中文表名",
+        "raw_remark": "备注（原始备注，供参考）",
+        "usage_scenarios": "使用场景（原始）",
         "business_module_lvl1": "一级业务模块",
         "business_module_lvl2": "二级业务模块",
         "create_sql": "建表语句",
         "related_tables": "关联表名",
-        "table_keywords": "表关键字",
+        "biz_object": "业务对象",
+        "biz_granularity": "业务粒度",
+        "primary_key_fields": "主业务键",
+        "time_field": "主时间字段",
     }
-    cn_columns = [col_mapping[c] for c in columns]
+    needed_columns = list(col_mapping.keys())
+    columns_str = ", ".join([f"`{col}`" for col in needed_columns])
+    in_clause = ", ".join([f"'{table}'" for table in selected_tables])
+    query = f"SELECT {columns_str} FROM table_meta WHERE table_name_en IN ({in_clause})"
+
+    result = ck_client.query(query)
+    columns = result.column_names  # 应该等于 needed_columns（顺序可能不同）
+    rows = result.result_rows
+
+    # ✅ 使用实际返回的列顺序来映射中文名（更健壮）
+    cn_columns = [col_mapping[col] for col in columns]
     table_info = [dict(zip(cn_columns, row)) for row in rows]
-    # print(json.dumps(table_info, ensure_ascii=False, indent=4))
 
+    # 附加样例数据
     for meta in table_info:
-        # 根据 建表语句 得到
-        parsed = parse_create_table(meta.get("建表语句", ""))
-        meta["字段映射"] = {col["name"]: col["comment"] for col in parsed["columns"]}
-
-        # 查询具体表数据得到
         info = get_table_info(ck_client, meta["英文表名"], sample_size=sample_num)
-        meta["字段类型"] = {col["name"]: col["type"] for col in info["columns"]}
         meta["样例数据"] = info["sample"]
-        # print(json.dumps(meta, ensure_ascii=False, indent=4))
 
     return table_info
 
